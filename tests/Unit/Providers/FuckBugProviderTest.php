@@ -81,7 +81,7 @@ final class FuckBugProviderTest extends TestCase
      */
     private function createProviderWithClient(HttpClientInterface $client): FuckBugProvider
     {
-        $provider = FuckBugProvider::create(self::TEST_DSN, ['password'], false, 1, 1);
+        $provider = FuckBugProvider::create(self::TEST_DSN, ['password'], false, true, 1, 1);
         $this->injectClient($provider, $client);
         return $provider;
     }

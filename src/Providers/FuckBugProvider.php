@@ -21,10 +21,8 @@ final class FuckBugProvider implements Provider
     private $dsn;
     /** @var bool */
     private $enableEnvLogging;
-    /** @var int */
-    private $timeout;
-    /** @var int */
-    private $connectionTimeout;
+    /** @var bool */
+    private $enableRequestContextLogging;
     /** @var HttpClientInterface */
     private $client;
 
@@ -34,13 +32,11 @@ final class FuckBugProvider implements Provider
         string $dsn,
         array $sensitiveFields,
         bool $enableEnvLogging,
-        int $timeout,
-        int $connectionTimeout
+        bool $enableRequestContextLogging
     ) {
         $this->dsn = $dsn;
         $this->enableEnvLogging = $enableEnvLogging;
-        $this->timeout = $timeout;
-        $this->connectionTimeout = $connectionTimeout;
+        $this->enableRequestContextLogging = $enableRequestContextLogging;
         $this->requestContext = new RequestContext($sensitiveFields);
         $this->client = $client;
     }
@@ -50,11 +46,20 @@ final class FuckBugProvider implements Provider
         string $dsn,
         array $sensitiveFields = ['password', 'token', 'api_key'],
         bool $enableEnvLogging = false,
+        bool $enableRequestContextLogging = true,
         int $timeout = 5,
         int $connectionTimeout = 3
     ): self {
-        $client = new HttpClient($timeout, $connectionTimeout);
-        return new self($client, $dsn, $sensitiveFields, $enableEnvLogging, $timeout, $connectionTimeout);
+        return new self(
+            new HttpClient(
+                $timeout,
+                $connectionTimeout
+            ),
+            $dsn,
+            $sensitiveFields,
+            $enableEnvLogging,
+            $enableRequestContextLogging
+        );
     }
 
     /**
@@ -68,47 +73,55 @@ final class FuckBugProvider implements Provider
             'time'          => $this->getMicroTime(),
             'level'         => $this->getLevel((string)$level),
             'message'       => $message,
-            'context'       => $context,
-            'ip'            => $this->requestContext->getUserIp(),
-            'url'           => $this->requestContext->getUrl(),
-            'method'        => $this->requestContext->getMethod(),
-            'headers'       => $this->requestContext->getHeaders(),
-            'queryParams'   => $this->requestContext->getQueryParams(),
-            'bodyParams'    => $this->requestContext->getBodyParams(),
-            'cookies'       => $this->requestContext->getCookies(),
-            'session'       => $this->requestContext->getSession(),
-            'files'         => $this->requestContext->getFiles(),
+            'context'       => !empty($context) ? $context : [],
         ];
+
+        if ($this->enableRequestContextLogging) {
+            $data += [
+                'ip'            => $this->requestContext->getUserIp(),
+                'url'           => $this->requestContext->getUrl(),
+                'method'        => $this->requestContext->getMethod(),
+                'headers'       => $this->requestContext->getHeaders(),
+                'queryParams'   => $this->requestContext->getQueryParams(),
+                'bodyParams'    => $this->requestContext->getBodyParams(),
+                'cookies'       => $this->requestContext->getCookies(),
+                'session'       => $this->requestContext->getSession(),
+                'files'         => $this->requestContext->getFiles(),
+            ];
+        }
 
         if ($this->enableEnvLogging) {
             $data['env'] = $this->requestContext->getEnv();
         }
+
         $this->client->send($this->dsn, 'logs', $data);
     }
 
     public function wtf(Throwable $exception, array $context = []): void
     {
         $data = [
-            'time'          => $this->getMicroTime(),
-            'file'          => $exception->getFile(),
-            'line'          => $exception->getLine(),
-            'message'       => $exception->getMessage(),
-            'stacktrace'    => $exception->getTrace(),
-            'context'       => $context,
-            'ip'            => $this->requestContext->getUserIp(),
-            'url'           => $this->requestContext->getUrl(),
-            'method'        => $this->requestContext->getMethod(),
-            'headers'       => $this->requestContext->getHeaders(),
-            'queryParams'   => $this->requestContext->getQueryParams(),
-            'bodyParams'    => $this->requestContext->getBodyParams(),
-            'cookies'       => $this->requestContext->getCookies(),
-            'session'       => $this->requestContext->getSession(),
-            'files'         => $this->requestContext->getFiles(),
+            'time'                  => $this->getMicroTime(),
+            'file'                  => $exception->getFile(),
+            'line'                  => $exception->getLine(),
+            'message'               => $exception->getMessage(),
+            'stacktrace'            => $exception->getTrace(),
+            'stacktraceAsString'    => $exception->getTraceAsString(),
+            'context'               => !empty($context) ? $context : [],
+            'ip'                    => $this->requestContext->getUserIp(),
+            'url'                   => $this->requestContext->getUrl(),
+            'method'                => $this->requestContext->getMethod(),
+            'headers'               => $this->requestContext->getHeaders(),
+            'queryParams'           => $this->requestContext->getQueryParams(),
+            'bodyParams'            => $this->requestContext->getBodyParams(),
+            'cookies'               => $this->requestContext->getCookies(),
+            'session'               => $this->requestContext->getSession(),
+            'files'                 => $this->requestContext->getFiles(),
         ];
 
         if ($this->enableEnvLogging) {
             $data['env'] = $this->requestContext->getEnv();
         }
+
         $this->client->send($this->dsn, 'errors', $data);
     }
 

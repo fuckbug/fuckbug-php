@@ -32,7 +32,7 @@ Initialize the SDK as early as possible in your application
 
 ```php
 try {
-    thisFunctionThrows(); // throw new \Exception('foo bar');
+    throw new \Exception('foo bar');
 } catch (\Exception $exception) {
     \FuckBug\FuckBug::getInstance()->wtf($exception);
 }
@@ -73,7 +73,7 @@ class MyCustomProvider implements Provider
 
 ```php
 \FuckBug\FuckBug::init([
-    new \FuckBug\Core\ProviderSetup(FuckBug\Providers\FuckBugProvider::create('__PUBLIC_DSN__')),
+    new \FuckBug\Core\ProviderSetup(\FuckBug\Providers\FuckBugProvider::create('__PUBLIC_DSN__')),
     new \FuckBug\Core\ProviderSetup(new MyCustomProvider())
 ]);
 ```

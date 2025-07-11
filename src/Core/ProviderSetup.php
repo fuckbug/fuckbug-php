@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace FuckBug\Core;
 
-class ProviderSetup
+final class ProviderSetup
 {
     /** @var Provider */
     public $provider;
@@ -40,9 +40,7 @@ class ProviderSetup
         bool $enabledEmergency = true
     ) {
         $this->provider = $provider;
-
         $this->enabledThrowable = $enabledThrowable;
-
         $this->enabledDebug = $enabledDebug;
         $this->enabledInfo = $enabledInfo;
         $this->enabledNotice = $enabledNotice;
